@@ -39,17 +39,17 @@ except ImportError:
 # ─────────────────────────────────────────────
 
 RAPIDAPI_KEY  = "227f756b50mshbfbd6f18ab7cf41p17b064jsn0ade51590aae"
-LEAKCHECK_KEY = "MASUKKAN_API_KEY_LEAKCHECK"
+LEAKCHECK_KEY = "99aed655fc285391368f32a9d1bb6d67c01a0a18"
 
 # ─────────────────────────────────────────────
 # PROXY & HEADERS
 # ─────────────────────────────────────────────
 
 UA_LIST = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Safari/605.1.15",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/123.0 Safari/537.36",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
 ]
 
 FREE_PROXY_SOURCES = [
@@ -78,19 +78,13 @@ def get_proxy():
     proxy_index += 1
     return {"http": f"http://{p}", "https": f"http://{p}"}
 
-def tor_renew():
-    if not TOR_OK:
-        return
-    try:
-        with Controller.from_port(port=9051) as c:
-            c.authenticate()
-            c.signal(Signal.NEWNYM)
-            time.sleep(3)
-    except Exception:
-        pass
-
 def session_headers():
-    return {"User-Agent": random.choice(UA_LIST), "Accept-Language": "en-US,en;q=0.9"}
+    return {
+        "User-Agent": random.choice(UA_LIST),
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Connection": "keep-alive",
+    }
 
 def safe_get(url, timeout=12, use_proxy=True):
     proxies = None
@@ -104,21 +98,23 @@ def safe_get(url, timeout=12, use_proxy=True):
                             allow_redirects=True, proxies=proxies)
     except Exception:
         try:
-            return requests.get(url, headers=session_headers(), timeout=timeout, allow_redirects=True)
+            return requests.get(url, headers=session_headers(), timeout=timeout,
+                                allow_redirects=True)
         except Exception:
             return None
 
-def safe_post(url, data=None, json=None, headers=None, timeout=12):
+def safe_post(url, data=None, json=None, extra_headers=None, timeout=12):
     h = session_headers()
-    if headers:
-        h.update(headers)
+    h["Content-Type"] = "application/json"
+    if extra_headers:
+        h.update(extra_headers)
     try:
         return requests.post(url, data=data, json=json, headers=h, timeout=timeout)
     except Exception:
         return None
 
 # ─────────────────────────────────────────────
-# SITES — 500+ (LENGKAP DARI FILE ASLI)
+# SITES — 500 SITUS (DARI FILE ASLI)
 # ─────────────────────────────────────────────
 
 SITES_TEXT = """
@@ -516,6 +512,10 @@ trovo https://trovo.live/s/{u}
 dlive https://dlive.tv/{u}
 bigo https://www.bigo.tv/user/{u}
 picarto https://picarto.tv/{u}
+mobcrush https://www.mobcrush.com/{u}
+glimesh https://glimesh.tv/{u}
+vkplay https://live.vkplay.ru/{u}
+afreecatv https://bj.afreecatv.com/{u}
 audius https://audius.co/{u}
 hearthis https://hearthis.at/{u}/
 musicbrainz https://musicbrainz.org/user/{u}
@@ -524,6 +524,7 @@ listenbrainz https://listenbrainz.org/user/{u}/
 ultimateguitar https://www.ultimate-guitar.com/u/{u}
 8tracks https://8tracks.com/{u}
 audiotool https://www.audiotool.com/user/{u}/
+flatio https://flat.io/{u}
 imgbb https://{u}.imgbb.com
 tenor https://tenor.com/users/{u}
 zenfolio https://{u}.zenfolio.com
@@ -621,7 +622,7 @@ wikiquote https://en.wikiquote.org/wiki/User:{u}
 
 NOT_FOUND = {
     "tiktok":    ["Couldn't find this account", "couldn\\u2019t find this account"],
-    "instagram": ["Page Not Found", "isn't available"],
+    "instagram": ["Page Not Found", "isn't available", "accounts/login"],
     "x":         ["This account doesn", "doesn\\u2019t exist"],
     "facebook":  ["This content isn't available", "Page Not Found"],
     "reddit":    ["Sorry, nobody on Reddit goes by that name", "page not found"],
@@ -630,33 +631,40 @@ NOT_FOUND = {
     "roblox":    ["Page cannot be found", "Page not found"],
     "linktree":  ["The page you\u2019re looking for doesn", "doesn't exist"],
 }
+
 GENERIC_NOT_FOUND = [
     "page not found", "user not found", "profile not found", "account not found",
     "doesn't exist", "does not exist", "no such user", "couldn't find",
     "halaman tidak ditemukan", "pengguna tidak ditemukan",
 ]
 
-PRIORITY_SITES   = ["instagram","facebook","tiktok","x","threads","telegram","github","linkedin"]
-INDONESIAN_SITES = ["tokopedia","shopee","bukalapak","kaskus","trakteer","saweria"]
+PRIORITY_SITES = [
+    "instagram", "facebook", "tiktok", "x", "threads",
+    "telegram", "github", "linkedin",
+]
+
+INDONESIAN_SITES = [
+    "tokopedia", "shopee", "bukalapak", "kaskus", "kompasiana",
+    "trakteer", "saweria", "sociabuzz",
+]
 
 REGION_ALIASES = {
-    "bandung":    ["bandung","bdg","jabar"],
-    "jakarta":    ["jakarta","jkt","dki"],
-    "surabaya":   ["surabaya","sby","jatim"],
-    "yogyakarta": ["yogyakarta","jogja","yogya"],
-    "semarang":   ["semarang","smg"],
-    "medan":      ["medan","mdn"],
-    "makassar":   ["makassar","mks"],
-    "bali":       ["denpasar","bali","dps"],
-    "malang":     ["malang","mlg"],
-    "solo":       ["solo","surakarta"],
-    "bogor":      ["bogor","bgr"],
-    "bekasi":     ["bekasi","bks"],
+    "bandung":    ["bandung", "bdg", "jabar"],
+    "jakarta":    ["jakarta", "jkt", "dki"],
+    "surabaya":   ["surabaya", "sby", "jatim"],
+    "yogyakarta": ["yogyakarta", "jogja", "yogya", "jgj"],
+    "semarang":   ["semarang", "smg"],
+    "medan":      ["medan", "mdn"],
+    "makassar":   ["makassar", "mks", "ujungpandang"],
+    "palembang":  ["palembang", "plg"],
+    "denpasar":   ["denpasar", "bali", "dps"],
+    "malang":     ["malang", "mlg"],
+    "solo":       ["solo", "surakarta", "skt"],
+    "bogor":      ["bogor", "bgr"],
+    "depok":      ["depok", "dpk"],
+    "tangerang":  ["tangerang", "tgr"],
+    "bekasi":     ["bekasi", "bks"],
 }
-
-# ─────────────────────────────────────────────
-# BREACH CHECK
-# ─────────────────────────────────────────────
 
 BREACH_LINKS = {
     "mangatoon":  "https://breachforums.st/Thread-Mangatoon",
@@ -669,6 +677,438 @@ BREACH_LINKS = {
     "dukcapil":   "https://breachforums.st/Thread-Dukcapil",
 }
 
+# ─────────────────────────────────────────────
+# WARNA & FONT
+# ─────────────────────────────────────────────
+
+C = {
+    "r": "\033[91m", "g": "\033[92m", "y": "\033[93m", "b": "\033[94m",
+    "m": "\033[95m", "c": "\033[96m", "w": "\033[97m", "d": "\033[90m",
+    "x": "\033[0m",  "B": "\033[1m",
+}
+
+FONT = {
+    "M": ["#   #","## ##","# # #","#   #","#   #"],
+    "R": ["#### ","#   #","#### ","#  # ","#   #"],
+    "4": ["#  # ","#  # ","#####","   # ","   # "],
+    "1": ["  #  "," ##  ","  #  ","  #  "," ### "],
+    "N": ["#   #","##  #","# # #","#  ##","#   #"],
+    "-": ["     ","     "," ### ","     ","     "],
+    "I": ["###"," # "," # "," # ","###"],
+    "D": ["#### ","#   #","#   #","#   #","#### "],
+}
+
+TUX = [
+    "      .--.      ",
+    "     |o_o |     ",
+    "     |:_/ |     ",
+    "    //   \\ \\    ",
+    "   (|     | )   ",
+    "  /'\\_   _/`\\   ",
+    "  \\___)=(___/   ",
+]
+
+def blok(teks):
+    baris = [""] * 5
+    for ch in teks:
+        if ch in FONT:
+            for i in range(5):
+                baris[i] += FONT[ch][i].replace("#", "█") + " "
+    return baris
+
+def banner():
+    os.system("clear")
+    cols = shutil.get_terminal_size((50, 20)).columns
+    print()
+    for line in TUX:
+        print(C["y"] + C["B"] + line.center(cols) + C["x"])
+        time.sleep(0.05)
+    print()
+    teks = ["MR414N-ID"]
+    if sum(len(FONT.get(c, ["     "])[0]) + 1 for c in teks[0] if c in FONT) > cols:
+        teks = ["MR414N", "-ID"]
+    warna = ["r", "y", "g", "c", "m"]
+    for t in teks:
+        for i, row in enumerate(blok(t)):
+            print(C[warna[i % len(warna)]] + C["B"] + row.center(cols) + C["x"])
+            time.sleep(0.05)
+    print()
+    print(C["c"] + C["B"] + "BY. MR414N-ID".center(cols) + C["x"])
+    print(C["d"] + f"OSINT Tools  •  {len(parse_sites())} situs".center(cols) + C["x"])
+    print(C["d"] + ("─" * min(cols, 44)).center(cols) + C["x"])
+    print()
+
+# ─────────────────────────────────────────────
+# CORE USERNAME FINDER
+# ─────────────────────────────────────────────
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+    "Accept-Language": "en-US,en;q=0.9",
+}
+
+SHOW_GAGAL = False
+
+def parse_sites():
+    sites = {}
+    for line in SITES_TEXT.strip().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            nama, url = line.split(maxsplit=1)
+            sites[nama] = url.strip()
+        except ValueError:
+            pass
+    return sites
+
+def build_link(pola, username):
+    if pola.startswith("https://{u}."):
+        username = username.replace("_", "-")
+    return pola.format(u=username)
+
+def ada_akun(nama, pola, username):
+    link = build_link(pola, username)
+    try:
+        r = requests.get(link, headers=HEADERS, timeout=10, allow_redirects=True)
+    except requests.RequestException:
+        return False, link
+    if r.status_code != 200:
+        return False, link
+    # Instagram: redirect ke login = tidak ada
+    if nama == "instagram" and "accounts/login" in r.url:
+        return False, link
+    if r.url.rstrip("/").count("/") <= 2 and not link.rstrip("/").endswith(r.url.rstrip("/").split("/")[-1]):
+        return False, link
+    body = r.text[:60000].lower()
+    for teks in NOT_FOUND.get(nama, []) + GENERIC_NOT_FOUND:
+        if teks.lower() in body:
+            return False, link
+    return True, link
+
+def cek_situs(nama, pola, username):
+    ada, link = ada_akun(nama, pola, username)
+    if not ada:
+        return nama, link, False
+    acak = "zq" + "".join(random.choices(string.ascii_lowercase + string.digits, k=14))
+    ada_acak, _ = ada_akun(nama, pola, acak)
+    return nama, link, not ada_acak
+
+def cari(username, simpan=True, koleksi=None):
+    sites = parse_sites()
+    total = len(sites)
+    sukses = []
+    selesai = 0
+    cols = shutil.get_terminal_size((50, 20)).columns
+    print(C["y"] + f"[*] Mencari '{username}' di {total} situs...\n" + C["x"])
+
+    def progres():
+        print(f"\r{C['d']}[{selesai}/{total}] sedang dicek...{C['x']}", end="", flush=True)
+
+    with ThreadPoolExecutor(max_workers=40) as ex:
+        futures = {ex.submit(cek_situs, n, p, username): n for n, p in sites.items()}
+        try:
+            for f in as_completed(futures):
+                selesai += 1
+                try:
+                    nama, link, ada = f.result()
+                except Exception:
+                    nama, link, ada = futures[f], "", False
+                if ada:
+                    print(f"\r\033[K{C['g']}[sukses]{C['x']} {nama}: {link}", flush=True)
+                    sukses.append((nama, link))
+                elif SHOW_GAGAL:
+                    print(f"\r\033[K{C['r']}[gagal]{C['x']} {nama}", flush=True)
+                progres()
+        except KeyboardInterrupt:
+            for fu in futures:
+                fu.cancel()
+            raise
+
+    sukses.sort(key=lambda x: x[0])
+    garis = "=" * min(cols, 44)
+    print("\r\033[K", end="")
+    print(f"\n{C['c']}{garis}{C['x']}")
+    print(f"{C['g']}{C['B']}Searching selesai sukses [ {len(sukses)} situs ]{C['x']}")
+    print(f"{C['d']}(dari {total} situs yang dicek){C['x']}")
+    print(f"{C['c']}{garis}{C['x']}")
+    if sukses:
+        for nama, link in sukses:
+            print(f"{C['y']}{nama}{C['x']} : {link}")
+        print(f"{C['c']}{garis}{C['x']}")
+        if simpan:
+            with open(f"hasil_{username}.txt", "w", encoding="utf-8") as fh:
+                fh.write(f"Searching selesai sukses [ {len(sukses)} situs ]\n")
+                fh.write("\n".join(f"{n} : {l}" for n, l in sukses) + "\n")
+            print(f"{C['g']}Tersimpan di hasil_{username}.txt{C['x']}")
+    else:
+        print(f"{C['r']}Tidak ada akun ditemukan.{C['x']}")
+    if koleksi is not None:
+        koleksi[username] = list(sukses)
+    return len(sukses)
+
+# ─────────────────────────────────────────────
+# NAME → USERNAME
+# ─────────────────────────────────────────────
+
+def normalize_name(nama):
+    nama = nama.lower().strip()
+    for ch in [",", ".", "-", "_"]:
+        nama = nama.replace(ch, " ")
+    return [p for p in nama.split() if p and len(p) > 1]
+
+def generate_candidates(nama, max_candidates=40):
+    parts = normalize_name(nama)
+    if not parts:
+        return []
+    candidates = set()
+    if len(parts) == 1:
+        base = parts[0]
+        candidates.update([base, f"{base}1", f"{base}01", f"{base}88",
+                           f"{base}99", f"{base}.id", f"{base}_id",
+                           f"_{base}", f"{base}_", f"the{base}", f"real{base}"])
+    else:
+        first, last = parts[0], parts[-1]
+        joined = "".join(parts)
+        candidates.update([joined, f"{first}{last}", f"{last}{first}",
+                           f"{first}.{last}", f"{first}_{last}", f"{first}-{last}",
+                           f"{first[:3]}{last}", f"{first}{last[:3]}",
+                           f"{first[0]}{last}"])
+        if len(parts) > 2:
+            mid = "".join(parts[1:-1])
+            candidates.add(f"{first}{mid}{last}")
+        for n in ["01", "88", "99", "123", "1"]:
+            candidates.update([f"{joined}{n}", f"{first}{last}{n}"])
+        for p in ["the", "real", "mr"]:
+            candidates.add(f"{p}{joined}")
+        candidates.update([f"{joined}.id", f"{joined}_id", f"{joined}official"])
+    return list(candidates)[:max_candidates]
+
+def region_in_username(username, region):
+    if not region:
+        return False
+    region_lower = region.lower().strip()
+    aliases = REGION_ALIASES.get(region_lower, [region_lower])
+    return any(a in username.lower() for a in aliases)
+
+def check_candidate_on_sites(candidate, sites_subset, max_workers=15):
+    found = []
+    def _check(item):
+        name, pattern = item
+        ada, link = ada_akun(name, pattern, candidate)
+        return name, link, ada
+    with ThreadPoolExecutor(max_workers=max_workers) as ex:
+        futures = {ex.submit(_check, item): item for item in sites_subset.items()}
+        for f in as_completed(futures):
+            try:
+                name, link, ada = f.result()
+                if ada:
+                    found.append((name, link))
+            except Exception:
+                pass
+    return found
+
+def tanya_yn(pesan):
+    while True:
+        j = input(f"{C['y']}{pesan} (y/n) {C['w']}>> {C['x']}").strip().lower()
+        if j in ("y", "ya"):
+            return True
+        if j in ("n", "t", "tidak"):
+            return False
+        print(f"{C['r']}Ketik y atau n.{C['x']}")
+
+def baca_file_username(path):
+    path = os.path.expanduser(path.strip().strip("\"'"))
+    if not os.path.isfile(path) and os.path.isfile(path + ".txt"):
+        path += ".txt"
+    if not os.path.isfile(path):
+        return None
+    daftar, dilewati, lihat = [], 0, set()
+    with open(path, encoding="utf-8", errors="ignore") as fh:
+        for baris in fh:
+            u = baris.strip().lstrip("@")
+            if not u:
+                continue
+            if " " in u or "\t" in u or u.lower() in lihat:
+                dilewati += 1
+                continue
+            lihat.add(u.lower())
+            daftar.append(u)
+    return daftar, dilewati
+
+def input_manual():
+    daftar = []
+    while True:
+        u = input(f"\n{C['g']}[?] Masukkan username >> {C['x']}").strip().lstrip("@")
+        if not u or " " in u:
+            print(f"{C['r']}Username tidak valid, coba lagi.{C['x']}")
+        elif u.lower() in [x.lower() for x in daftar]:
+            print(f"{C['y']}'{u}' sudah ada di daftar.{C['x']}")
+        else:
+            daftar.append(u)
+            print(f"{C['g']}[+] Ditambahkan: {u}  (total {len(daftar)}){C['x']}")
+        while True:
+            lanjut = input(
+                f"{C['y']}[1]{C['x']} Tambah username lagi  "
+                f"{C['y']}[2]{C['x']} Selesai & lanjut cari {C['w']}>> {C['x']}"
+            ).strip()
+            if lanjut in ("1", "2"):
+                break
+            print(f"{C['r']}Ketik 1 atau 2.{C['x']}")
+        if lanjut == "2":
+            return daftar
+
+def cari_dari_nama(nama, region):
+    sites = parse_sites()
+    candidates = generate_candidates(nama)
+    if not candidates:
+        print(f"{C['r']}Nama tidak valid.{C['x']}")
+        return
+    priority_patterns = {n: sites[n] for n in PRIORITY_SITES if n in sites}
+    indo_patterns = {n: sites[n] for n in INDONESIAN_SITES if n in sites} if region else {}
+    found = {}
+    for i, cand in enumerate(candidates, 1):
+        print(f"\r{C['d']}[{i}/{len(candidates)}] cek: {cand}...{C['x']}   ", end="", flush=True)
+        social = check_candidate_on_sites(cand, priority_patterns)
+        if social:
+            found[cand] = {"sites": social, "region_match": region_in_username(cand, region), "indonesian": False}
+            print(f"\r\033[K{C['g']}[+] {cand} → {', '.join(s[0] for s in social)}{C['x']}")
+    print("\r\033[K", end="")
+    if not found:
+        print(f"{C['r']}Tidak ada kandidat ditemukan.{C['x']}")
+        return
+    if region and indo_patterns:
+        for cand in list(found.keys()):
+            indo = check_candidate_on_sites(cand, indo_patterns, max_workers=8)
+            if indo:
+                found[cand]["sites"].extend(indo)
+                found[cand]["indonesian"] = True
+    def skor(item):
+        _, info = item
+        s = len(info["sites"])
+        if info["region_match"]: s += 10
+        if info["indonesian"]: s += 5
+        return -s
+    sorted_found = sorted(found.items(), key=skor)
+    cols = shutil.get_terminal_size((50, 20)).columns
+    garis = "=" * min(cols, 44)
+    print(f"\n{C['c']}{garis}{C['x']}")
+    print(f"{C['g']}{C['B']}KANDIDAT DITEMUKAN [ {len(sorted_found)} username ]{C['x']}")
+    print(f"{C['c']}{garis}{C['x']}")
+    for i, (cand, info) in enumerate(sorted_found, 1):
+        tags = []
+        if info["region_match"]: tags.append(f"{C['g']}[daerah✓]{C['x']}")
+        if info["indonesian"]: tags.append(f"{C['c']}[indo✓]{C['x']}")
+        sites_str = ", ".join(s[0] for s in info["sites"][:4])
+        print(f"{C['y']}{i:2}.{C['x']} {C['w']}{cand:<22}{C['x']} {C['d']}({sites_str}){C['x']} {' '.join(tags)}")
+    print(f"{C['c']}{garis}{C['x']}")
+    try:
+        choice = input(f"\n{C['y']}Pilih nomor untuk cek 500 situs (contoh: 1,2,3 / all / skip) >> {C['x']}").strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        return
+    if not choice or choice == "skip":
+        return
+    if choice == "all":
+        selected = [c for c, _ in sorted_found]
+    else:
+        try:
+            idxs = [int(x.strip()) - 1 for x in choice.split(",")]
+            selected = [sorted_found[i][0] for i in idxs if 0 <= i < len(sorted_found)]
+        except Exception:
+            selected = []
+    for u in selected:
+        cari(u)
+
+def cari_gabungan(nama, region):
+    sites = parse_sites()
+    candidates = generate_candidates(nama)
+    if not candidates:
+        print(f"{C['r']}Nama tidak valid.{C['x']}")
+        return
+    priority_patterns = {n: sites[n] for n in PRIORITY_SITES if n in sites}
+    found = {}
+    for i, cand in enumerate(candidates, 1):
+        print(f"\r{C['d']}[{i}/{len(candidates)}] cek: {cand}...{C['x']}   ", end="", flush=True)
+        social = check_candidate_on_sites(cand, priority_patterns)
+        if social:
+            found[cand] = social
+            print(f"\r\033[K{C['g']}[+] {cand} → {', '.join(s[0] for s in social)}{C['x']}")
+    print("\r\033[K")
+    if not found:
+        print(f"{C['r']}Tidak ada kandidat ditemukan.{C['x']}")
+        return
+    for u in found:
+        cari(u)
+
+def cari_massal():
+    print(f"\n{C['c']}{C['B']}CARI USERNAME MASSAL{C['x']}")
+    print(f"{C['y']}[1]{C['x']} Dari file txt {C['d']}(satu username per baris){C['x']}")
+    print(f"{C['y']}[2]{C['x']} Input manual")
+    print(f"{C['y']}[b]{C['x']} Kembali")
+    try:
+        pilih = input(f"\n{C['g']}[?] Pilih >> {C['x']}").strip().lower()
+        if pilih == "1":
+            fn = input(f"{C['g']}[?] Nama file txt (contoh: list.txt) >> {C['x']}").strip()
+            if not fn: return
+            data = baca_file_username(fn)
+            if data is None:
+                print(f"{C['r']}File tidak ditemukan.{C['x']}")
+                return
+            daftar, dilewati = data
+            print(f"{C['g']}[+] {len(daftar)} username terbaca{C['x']}")
+            if dilewati:
+                print(f"{C['d']}    ({dilewati} dilewati){C['x']}")
+        elif pilih == "2":
+            daftar = input_manual()
+        else:
+            return
+        if not daftar: return
+        total_situs = len(parse_sites())
+        print(f"\n{C['c']}Daftar username ({len(daftar)}):{C['x']}")
+        for u in daftar[:8]:
+            print(f"  {C['w']}{u}{C['x']}")
+        if len(daftar) > 8:
+            print(f"  {C['d']}... dan {len(daftar)-8} lainnya{C['x']}")
+        print(f"{C['d']}Total {len(daftar)} x {total_situs} = {len(daftar)*total_situs} pengecekan{C['x']}\n")
+        if not tanya_yn("Mulai pencarian?"):
+            return
+    except (EOFError, KeyboardInterrupt):
+        return
+    hasil = {}
+    garis = "=" * 44
+    try:
+        for i, u in enumerate(daftar, 1):
+            print(f"\n{C['y']}{C['B']}{garis}{C['x']}")
+            print(f"{C['y']}{C['B']}[{i}/{len(daftar)}] USERNAME: {u}{C['x']}")
+            print(f"{C['y']}{C['B']}{garis}{C['x']}")
+            cari(u, simpan=False, koleksi=hasil)
+    except (KeyboardInterrupt, EOFError):
+        print(f"\n{C['r']}Dibatalkan.{C['x']}")
+    if not hasil: return
+    urut = sorted(hasil.items(), key=lambda kv: -len(kv[1]))
+    total_jejak = sum(len(v) for v in hasil.values())
+    print(f"\n{C['g']}{C['B']}RINGKASAN MASSAL{C['x']}")
+    for u, v in urut:
+        warna = C["g"] if v else C["r"]
+        print(f"{C['y']}{u:<22}{C['x']} : {warna}{C['B']}{len(v)} situs{C['x']}")
+    print(f"{C['d']}Total: {len(hasil)} username, {total_jejak} jejak akun{C['x']}")
+    try:
+        if tanya_yn("Simpan hasil ke hasil_massal.txt?"):
+            with open("hasil_massal.txt", "w", encoding="utf-8") as fh:
+                fh.write("Pencarian massal - BY. MR414N-ID\n")
+                for u, v in urut:
+                    fh.write(f"\n=== {u} ({len(v)} situs) ===\n")
+                    for ns, lk in sorted(v):
+                        fh.write(f"{ns} : {lk}\n")
+            print(f"{C['g']}Tersimpan di hasil_massal.txt{C['x']}")
+    except (EOFError, KeyboardInterrupt):
+        pass
+
+# ─────────────────────────────────────────────
+# BREACH CHECK
+# ─────────────────────────────────────────────
+
 def breach_check(email):
     print(f"\n{C['c']}[*] Breach Check: {email}{C['x']}")
     hasil = []
@@ -677,16 +1117,21 @@ def breach_check(email):
     try:
         r = requests.get(
             f"https://haveibeenpwned.com/unifiedsearch/{email}",
-            headers={**session_headers(), "Accept": "application/json"},
-            timeout=12
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36",
+                "Accept": "application/json",
+                "Referer": "https://haveibeenpwned.com/",
+                "Origin": "https://haveibeenpwned.com",
+            },
+            timeout=15
         )
         if r.status_code == 200:
             data = r.json()
             for b in data.get("Breaches", []):
-                nama      = b.get("Name", "")
-                tahun     = b.get("BreachDate", "")[:4]
+                nama       = b.get("Name", "")
+                tahun      = b.get("BreachDate", "")[:4]
                 data_bocor = ", ".join(b.get("DataClasses", []))
-                link      = BREACH_LINKS.get(nama.lower().replace(" ",""), "https://haveibeenpwned.com")
+                link       = BREACH_LINKS.get(nama.lower().replace(" ", ""), "https://haveibeenpwned.com")
                 hasil.append({"nama": nama, "tahun": tahun, "data": data_bocor,
                                "link": link, "password": None})
                 print(f"{C['r']}[BREACH]{C['x']} Email pernah tersebar di {C['y']}{nama}{C['x']}")
@@ -704,19 +1149,16 @@ def breach_check(email):
                 "X-RapidAPI-Host": "breachdirectory.p.rapidapi.com",
             },
             params={"func": "auto", "term": email},
-            timeout=12
+            timeout=15
         )
         if r.status_code == 200:
             data = r.json()
             for item in data.get("result", []):
-                src  = item.get("sources", ["Unknown"])[0]
+                src  = item.get("sources", ["Unknown"])[0] if item.get("sources") else "Unknown"
                 pw   = item.get("password", "")
-                sha1 = item.get("sha1", "")
-                # cari apakah breach ini sudah ada di list
                 match = next((h for h in hasil if h["nama"].lower() == src.lower()), None)
                 if match:
-                    if pw:
-                        match["password"] = pw
+                    if pw: match["password"] = pw
                 else:
                     hasil.append({
                         "nama": src, "tahun": "", "data": "password",
@@ -729,22 +1171,27 @@ def breach_check(email):
         print(f"{C['y']}[!] BreachDirectory: {e}{C['x']}")
 
     # 3. LeakCheck
-    if LEAKCHECK_KEY and LEAKCHECK_KEY != "99aed655fc285391368f32a9d1bb6d67c01a0a18":
-        try:
-            r = requests.get(
-                f"https://leakcheck.io/api/public?key={LEAKCHECK_KEY}&check={email}",
-                timeout=12
-            )
-            if r.status_code == 200:
-                data = r.json()
-                for item in data.get("result", []):
-                    pw  = item.get("password")
-                    src = item.get("source", "")
-                    match = next((h for h in hasil if h["nama"].lower() == src.lower()), None)
-                    if match and pw:
-                        match["password"] = pw
-        except Exception:
-            pass
+    try:
+        r = requests.get(
+            f"https://leakcheck.io/api/public?key={LEAKCHECK_KEY}&check={email}",
+            timeout=15
+        )
+        if r.status_code == 200:
+            data = r.json()
+            for item in data.get("result", []):
+                pw  = item.get("password")
+                src = item.get("source", "")
+                match = next((h for h in hasil if h["nama"].lower() == src.lower()), None)
+                if match:
+                    if pw: match["password"] = pw
+                else:
+                    hasil.append({
+                        "nama": src, "tahun": "", "data": "password",
+                        "link": BREACH_LINKS.get(src.lower(), "https://leakcheck.io"),
+                        "password": pw or None
+                    })
+    except Exception as e:
+        print(f"{C['y']}[!] LeakCheck: {e}{C['x']}")
 
     # output
     garis = "=" * 44
@@ -752,7 +1199,7 @@ def breach_check(email):
     if not hasil:
         print(f"{C['r']}Tidak ada breach ditemukan.{C['x']}")
     for b in hasil:
-        print(f"\n{C['y']}[{b['nama']}]{C['x']}" + (f" — {b['tahun']}" if b['tahun'] else ""))
+        print(f"\n{C['y']}[{b['nama']}]{C['x']}" + (f" — {b['tahun']}" if b["tahun"] else ""))
         print(f"  Email    : {email}")
         if b["password"]:
             print(f"  Password : {C['g']}{b['password']}{C['x']}")
@@ -767,139 +1214,169 @@ def breach_check(email):
 # ─────────────────────────────────────────────
 
 def fmt_nomor(nomor):
-    nomor = nomor.strip().replace(" ","").replace("-","")
+    nomor = nomor.strip().replace(" ", "").replace("-", "")
     if nomor.startswith("08"):
         nomor = "+62" + nomor[1:]
-    elif nomor.startswith("62"):
+    elif nomor.startswith("628") and not nomor.startswith("+"):
         nomor = "+" + nomor
     elif not nomor.startswith("+"):
         nomor = "+62" + nomor
     return nomor
 
 def cek_wa(nomor):
-    # WhatsApp: cek via klik.me wrapper
-    no_bersih = nomor.replace("+","").replace(" ","")
+    no = nomor.replace("+", "")
     try:
         r = requests.get(
-            f"https://api.whatsapp.com/send?phone={no_bersih}",
-            headers=session_headers(), timeout=10, allow_redirects=True
+            f"https://wa.me/{no}",
+            headers=session_headers(),
+            timeout=12,
+            allow_redirects=True
         )
-        if r and "invalid" not in r.text.lower() and "phone number" not in r.text.lower():
-            return True
+        if r and r.status_code == 200:
+            if "open.whatsapp.com" in r.url or "api.whatsapp.com/send" in r.url:
+                return True
+            if "wa.me" in r.url and "send" in r.url:
+                return True
+        return False
     except Exception:
-        pass
-    return False
+        return False
 
 def cek_telegram(nomor):
     try:
-        r = safe_get(f"https://t.me/{nomor}", timeout=10)
-        if r and r.status_code == 200 and "tgme_page_extra\"></div>" not in r.text:
-            return True
+        r = requests.get(
+            f"https://t.me/{nomor}",
+            headers=session_headers(),
+            timeout=10,
+            allow_redirects=True
+        )
+        if r and r.status_code == 200:
+            if "tgme_page_extra\"></div>" not in r.text:
+                return True
+        return False
     except Exception:
-        pass
-    return False
+        return False
 
-def cek_wa_link(nomor):
-    no = nomor.replace("+","")
+def cek_fintech_nama(platform, nomor):
+    """Cek platform fintech dan ambil nama via transfer preview endpoint."""
+    no_bersih = nomor.replace("+", "").replace(" ", "")
+    no62 = no_bersih if no_bersih.startswith("62") else "62" + no_bersih.lstrip("0")
+
+    endpoints = {
+        "OVO": {
+            "url": f"https://api.ovo.id/v2/user/check-phone?phone={no62}",
+            "method": "GET",
+            "nama_field": ["data", "name"],
+            "registered_field": "registered",
+        },
+        "GoPay": {
+            "url": "https://gojek.com/api/v1/gopay/check-phone",
+            "method": "POST",
+            "body": {"phone": f"+{no62}"},
+            "nama_field": ["data", "name"],
+            "registered_field": "success",
+        },
+        "Dana": {
+            "url": f"https://m.dana.id/m/portal/v1/account/check?phone=%2B{no62}",
+            "method": "GET",
+            "nama_field": ["response", "body", "name"],
+            "registered_field": "REGISTERED",
+        },
+        "ShopeePay": {
+            "url": "https://shopee.co.id/api/v2/user/check_phone_number",
+            "method": "POST",
+            "body": {"phone_number": no_bersih},
+            "nama_field": ["data", "username"],
+            "registered_field": "phone_registered",
+        },
+        "LinkAja": {
+            "url": f"https://api.linkaja.id/v1/user/check?msisdn={no_bersih}",
+            "method": "GET",
+            "nama_field": ["data", "name"],
+            "registered_field": "registered",
+        },
+    }
+
+    if platform not in endpoints:
+        return False, None
+
+    ep = endpoints[platform]
     try:
-        r = requests.get(f"https://wa.me/{no}",
-                         headers=session_headers(), timeout=10, allow_redirects=True)
-        if r and r.status_code == 200 and "open.whatsapp.com" in r.url:
-            return True
+        if ep["method"] == "GET":
+            r = requests.get(ep["url"], headers=session_headers(), timeout=10)
+        else:
+            r = requests.post(ep["url"], json=ep.get("body", {}),
+                              headers=session_headers(), timeout=10)
+        if not r or r.status_code not in [200, 201]:
+            return False, None
+        try:
+            data = r.json()
+        except Exception:
+            return False, None
+        # cek registered
+        body_str = str(data).lower()
+        reg_field = ep.get("registered_field", "").lower()
+        if reg_field and reg_field not in body_str:
+            return False, None
+        # ambil nama
+        nama = None
+        fields = ep.get("nama_field", [])
+        d = data
+        for f in fields:
+            if isinstance(d, dict):
+                d = d.get(f)
+            else:
+                break
+        if isinstance(d, str) and d:
+            # sensor nama: B**i S*******o
+            parts = d.split()
+            nama_sensor = " ".join(
+                p[0] + "*" * (len(p) - 1) if len(p) > 1 else p
+                for p in parts
+            )
+            nama = nama_sensor
+        return True, nama
     except Exception:
-        pass
-    return False
+        return False, None
 
 def phone_lookup(nomor_raw):
     nomor = fmt_nomor(nomor_raw)
-    no_bersih = nomor.replace("+","")
     print(f"\n{C['c']}[*] Phone Lookup: {nomor}{C['x']}")
+    hasil = {}
 
-    hasil = {"sosmed": [], "ecommerce": [], "fintech": [], "lain": []}
+    # WhatsApp
+    print(f"{C['d']}  cek WhatsApp...{C['x']}", end="", flush=True)
+    wa = cek_wa(nomor)
+    hasil["WhatsApp"] = {"ada": wa, "nama": None, "kategori": "sosmed"}
+    print(f"\r  {'✅' if wa else '❌'} WhatsApp")
 
-    checks = [
-        # (kategori, nama, fungsi_cek)
-        ("sosmed",    "WhatsApp",   lambda: cek_wa_link(nomor)),
-        ("sosmed",    "Telegram",   lambda: cek_telegram(nomor)),
-        ("sosmed",    "Line",       lambda: _http_ok(f"https://line.me/ti/p/~{no_bersih}", 200)),
-        ("ecommerce", "Tokopedia",  lambda: _probe_json(
-            "https://accounts.tokopedia.com/otp/c/page",
-            json_data={"msisdn": nomor, "otpType": "116"},
-            find="success")),
-        ("ecommerce", "Shopee",     lambda: _probe_json(
-            "https://shopee.co.id/api/v2/user/login",
-            json_data={"phone": no_bersih},
-            find="phone_used")),
-        ("ecommerce", "Bukalapak",  lambda: _probe_json(
-            "https://api.bukalapak.com/v2/users/check",
-            json_data={"phone": nomor},
-            find="available\":false")),
-        ("ecommerce", "Lazada",     lambda: _probe_json(
-            "https://member.lazada.co.id/user/api/checkPhoneNumber",
-            json_data={"mobilePhone": nomor},
-            find="exist")),
-        ("fintech",   "GoPay/Gojek",lambda: _probe_json(
-            f"https://goid.go-jek.com/v3/register/check",
-            json_data={"phone_number": nomor},
-            find="registered")),
-        ("fintech",   "OVO",        lambda: _probe_json(
-            "https://api.ovo.id/v2/user/check",
-            json_data={"phone": nomor},
-            find="registered")),
-        ("fintech",   "Dana",       lambda: _probe_json(
-            "https://m.dana.id/m/portal/v1/account/check",
-            json_data={"phone": nomor},
-            find="REGISTERED")),
-        ("fintech",   "LinkAja",    lambda: _probe_json(
-            "https://api.linkaja.id/v1/user/check",
-            json_data={"msisdn": nomor},
-            find="registered")),
-        ("fintech",   "ShopeePay",  lambda: _probe_json(
-            "https://shopee.co.id/api/v2/user/login",
-            json_data={"phone": no_bersih},
-            find="shopeepay")),
-        ("lain",      "Grab",       lambda: _probe_json(
-            f"https://p.grabtaxi.com/api/passenger/v2/profile/phone/{no_bersih}",
-            find="user")),
-        ("lain",      "Traveloka",  lambda: _probe_json(
-            "https://www.traveloka.com/api/v2/account/checkIdentity",
-            json_data={"type":"PHONE","identity": nomor},
-            find="REGISTERED")),
-    ]
+    # Telegram
+    print(f"{C['d']}  cek Telegram...{C['x']}", end="", flush=True)
+    tg = cek_telegram(nomor)
+    hasil["Telegram"] = {"ada": tg, "nama": None, "kategori": "sosmed"}
+    print(f"\r  {'✅' if tg else '❌'} Telegram")
 
-    for kategori, nama, fn in checks:
-        try:
-            ada = fn()
-            if ada:
-                hasil[kategori].append(nama)
-                print(f"{C['g']}  ✅ {nama}{C['x']}")
-            else:
-                print(f"{C['r']}  ❌ {nama}{C['x']}")
-        except Exception:
-            print(f"{C['y']}  ⚠ {nama} (timeout){C['x']}")
-
-    return hasil, nomor
-
-def _http_ok(url, expected_status=200):
-    try:
-        r = safe_get(url, timeout=10)
-        return r and r.status_code == expected_status
-    except Exception:
-        return False
-
-def _probe_json(url, json_data=None, find=None):
-    try:
-        if json_data:
-            r = safe_post(url, json=json_data, timeout=10)
+    # Fintech dengan nama
+    for platform in ["OVO", "GoPay", "Dana", "ShopeePay", "LinkAja"]:
+        print(f"{C['d']}  cek {platform}...{C['x']}", end="", flush=True)
+        ada, nama = cek_fintech_nama(platform, nomor)
+        hasil[platform] = {"ada": ada, "nama": nama, "kategori": "fintech"}
+        if ada:
+            nama_str = f" — {C['g']}{nama}{C['x']}" if nama else ""
+            print(f"\r  ✅ {platform}{nama_str}")
         else:
-            r = safe_get(url, timeout=10)
-        if not r:
-            return False
-        if find and find.lower() in r.text.lower():
-            return True
-        return False
-    except Exception:
-        return False
+            print(f"\r  ❌ {platform}")
+
+    # Output ringkasan
+    garis = "=" * 44
+    print(f"\n{C['c']}{garis}{C['x']}")
+    print(f"{C['g']}{C['B']}HASIL PHONE LOOKUP — {nomor}{C['x']}")
+    print(f"{C['c']}{garis}{C['x']}")
+    for nama_p, info in hasil.items():
+        if info["ada"]:
+            nama_str = f" ({info['nama']})" if info["nama"] else ""
+            print(f"  {C['g']}✅ {nama_p}{C['x']}{nama_str}")
+    print(f"{C['c']}{garis}{C['x']}")
+    return hasil, nomor
 
 # ─────────────────────────────────────────────
 # PROFILE SCRAPER
@@ -907,36 +1384,38 @@ def _probe_json(url, json_data=None, find=None):
 
 def scrape_github(username):
     try:
-        r = safe_get(f"https://api.github.com/users/{username}")
+        r = requests.get(f"https://api.github.com/users/{username}", timeout=10)
         if r and r.status_code == 200:
             d = r.json()
-            return {"nama": d.get("name"), "email": d.get("email"),
-                    "lokasi": d.get("location"), "company": d.get("company"),
-                    "bio": d.get("bio"), "avatar": d.get("avatar_url")}
+            return {
+                "nama": d.get("name"), "email": d.get("email"),
+                "lokasi": d.get("location"), "company": d.get("company"),
+                "bio": d.get("bio"), "avatar": d.get("avatar_url"),
+            }
     except Exception:
         pass
     return {}
 
 def scrape_instagram(username):
     try:
-        r = safe_get(f"https://www.instagram.com/{username}/?__a=1&__d=dis")
-        if r and r.status_code == 200:
-            d = r.json().get("graphql",{}).get("user",{})
-            return {"nama": d.get("full_name"), "bio": d.get("biography"),
-                    "follower": d.get("edge_followed_by",{}).get("count"),
-                    "avatar": d.get("profile_pic_url_hd")}
-    except Exception:
-        pass
-    return {}
-
-def scrape_twitter(username):
-    try:
-        r = safe_get(f"https://api.twitter.com/2/users/by/username/{username}",
-                     timeout=10)
-        if r and r.status_code == 200:
-            d = r.json().get("data",{})
-            return {"nama": d.get("name"), "bio": d.get("description"),
-                    "avatar": d.get("profile_image_url")}
+        r = requests.get(
+            f"https://www.instagram.com/{username}/",
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml",
+            },
+            timeout=10,
+            allow_redirects=True
+        )
+        if r and r.status_code == 200 and "accounts/login" not in r.url:
+            nama = re.search(r'"full_name":"([^"]+)"', r.text)
+            bio  = re.search(r'"biography":"([^"]*)"', r.text)
+            foto = re.search(r'"profile_pic_url":"([^"]+)"', r.text)
+            return {
+                "nama": nama.group(1) if nama else None,
+                "bio":  bio.group(1).replace("\\n", " ") if bio else None,
+                "avatar": foto.group(1).replace("\\/", "/") if foto else None,
+            }
     except Exception:
         pass
     return {}
@@ -944,7 +1423,10 @@ def scrape_twitter(username):
 def profile_scraper(username, found_sites):
     print(f"\n{C['c']}[*] Profile Scraper: {username}{C['x']}")
     profiles = {}
-    scrapers = {"github": scrape_github, "instagram": scrape_instagram, "x": scrape_twitter}
+    scrapers = {
+        "github":    scrape_github,
+        "instagram": scrape_instagram,
+    }
     for site in found_sites:
         if site in scrapers:
             data = scrapers[site](username)
@@ -961,11 +1443,20 @@ def profile_scraper(username, found_sites):
 # ─────────────────────────────────────────────
 
 def get_phash(url):
-    if not PHASH_OK:
+    if not PHASH_OK or not url:
         return None
     try:
-        r = requests.get(url, timeout=10)
-        img = Image.open(BytesIO(r.content))
+        r = requests.get(
+            url,
+            headers={
+                "User-Agent": random.choice(UA_LIST),
+                "Referer": "https://www.instagram.com/",
+            },
+            timeout=12
+        )
+        if r.status_code != 200:
+            return None
+        img = Image.open(BytesIO(r.content)).convert("RGB")
         return imagehash.phash(img)
     except Exception:
         return None
@@ -978,13 +1469,20 @@ def avatar_phash(profiles):
     hashes = {}
     for site, data in profiles.items():
         url = data.get("avatar")
-        if url:
-            h = get_phash(url)
-            if h:
-                hashes[site] = h
+        if not url:
+            continue
+        h = get_phash(url)
+        if h:
+            hashes[site] = h
+            print(f"  {site}: hash OK")
+        else:
+            print(f"  {C['d']}{site}: gagal download foto{C['x']}")
+    if len(hashes) < 2:
+        print(f"{C['d']}  Kurang dari 2 foto — tidak ada perbandingan.{C['x']}")
+        return
     sites = list(hashes.keys())
     for i in range(len(sites)):
-        for j in range(i+1, len(sites)):
+        for j in range(i + 1, len(sites)):
             jarak = hashes[sites[i]] - hashes[sites[j]]
             if jarak < 10:
                 label = "identik" if jarak == 0 else "sangat mirip"
@@ -1042,14 +1540,17 @@ def wayback_check(username, found_sites):
             continue
         url = sites[site].replace("{u}", username)
         try:
-            r = safe_get(f"https://archive.org/wayback/available?url={url}",
-                         timeout=12, use_proxy=False)
+            r = requests.get(
+                f"https://archive.org/wayback/available?url={url}",
+                headers=session_headers(),
+                timeout=12
+            )
             if not r:
                 continue
-            snap = r.json().get("archived_snapshots",{}).get("closest",{})
+            snap = r.json().get("archived_snapshots", {}).get("closest", {})
             if snap.get("available"):
-                ts    = snap.get("timestamp","")
-                wb_url = snap.get("url","")
+                ts    = snap.get("timestamp", "")
+                wb_url = snap.get("url", "")
                 print(f"{C['g']}  [ARCHIVED]{C['x']} {site} — {ts[:4]}")
                 print(f"    {wb_url}")
                 hasil_wb.append({"site": site, "tahun": ts[:4], "url": wb_url})
@@ -1066,39 +1567,32 @@ def wayback_check(username, found_sites):
 def social_graph(username, found_sites):
     print(f"\n{C['c']}[*] Social Graph: {username}{C['x']}")
     koneksi = {}
-
-    # GitHub followers/following
     if "github" in found_sites:
-        try:
-            r = safe_get(f"https://api.github.com/users/{username}/followers?per_page=10")
-            if r and r.status_code == 200:
-                for u in r.json():
-                    login = u.get("login","")
-                    koneksi[login] = koneksi.get(login, {"platform": [], "count": 0})
-                    koneksi[login]["platform"].append("github-follower")
-                    koneksi[login]["count"] += 1
-            r2 = safe_get(f"https://api.github.com/users/{username}/following?per_page=10")
-            if r2 and r2.status_code == 200:
-                for u in r2.json():
-                    login = u.get("login","")
-                    koneksi[login] = koneksi.get(login, {"platform": [], "count": 0})
-                    koneksi[login]["platform"].append("github-following")
-                    koneksi[login]["count"] += 1
-        except Exception:
-            pass
-
-    # tampilkan
+        for endpoint, label in [
+            (f"https://api.github.com/users/{username}/followers?per_page=10", "github-follower"),
+            (f"https://api.github.com/users/{username}/following?per_page=10", "github-following"),
+        ]:
+            try:
+                r = requests.get(endpoint, timeout=10)
+                if r and r.status_code == 200:
+                    for u in r.json():
+                        login = u.get("login", "")
+                        if login not in koneksi:
+                            koneksi[login] = {"platform": [], "count": 0}
+                        koneksi[login]["platform"].append(label)
+                        koneksi[login]["count"] += 1
+            except Exception:
+                pass
     if koneksi:
         garis = "=" * 44
         print(f"\n{C['c']}{garis}{C['x']}")
-        print(f"{C['g']}{C['B']}KONEKSI DITEMUKAN [{len(koneksi)}]{C['x']}")
+        print(f"{C['g']}{C['B']}KONEKSI [{len(koneksi)}]{C['x']}")
         print(f"{C['c']}{garis}{C['x']}")
         for nama_k, info in sorted(koneksi.items(), key=lambda x: -x[1]["count"])[:20]:
             platform_str = ", ".join(set(info["platform"]))
             print(f"  {C['y']}{nama_k:<20}{C['x']} — {platform_str}")
     else:
-        print(f"{C['d']}  Tidak ada koneksi publik ditemukan.{C['x']}")
-
+        print(f"{C['d']}  Tidak ada koneksi publik.{C['x']}")
     return koneksi
 
 # ─────────────────────────────────────────────
@@ -1106,20 +1600,19 @@ def social_graph(username, found_sites):
 # ─────────────────────────────────────────────
 
 def nik_search():
-    print(f"\n{C['c']}{C['B']}NIK SEARCH — dari nama{C['x']}")
+    print(f"\n{C['c']}{C['B']}NIK SEARCH — nama → NIK{C['x']}")
     try:
-        nama  = input(f"{C['g']}[?] Nama lengkap  >> {C['x']}").strip()
-        kota  = input(f"{C['g']}[?] Kota (Enter skip) >> {C['x']}").strip()
+        nama = input(f"{C['g']}[?] Nama lengkap  >> {C['x']}").strip()
+        kota = input(f"{C['g']}[?] Kota (Enter skip) >> {C['x']}").strip()
     except (EOFError, KeyboardInterrupt):
         return []
-
     if not nama:
         return []
 
     print(f"\n{C['y']}[*] Mencari NIK untuk: {nama}{C['x']}")
     kandidat = []
 
-    # BreachDirectory by nama
+    # BreachDirectory
     try:
         r = requests.get(
             "https://breachdirectory.p.rapidapi.com/",
@@ -1128,55 +1621,50 @@ def nik_search():
                 "X-RapidAPI-Host": "breachdirectory.p.rapidapi.com",
             },
             params={"func": "auto", "term": nama},
-            timeout=12
+            timeout=15
         )
         if r.status_code == 200:
             data = r.json()
             for item in data.get("result", []):
-                # filter field yang relevan
-                nik     = item.get("nik") or item.get("id_number","")
-                tgl     = item.get("tanggal_lahir") or item.get("dob","")
-                alamat  = item.get("alamat") or item.get("address","")
-                jk      = item.get("jenis_kelamin") or item.get("gender","")
-                nama_db = item.get("nama") or item.get("name","")
+                nik    = item.get("nik") or item.get("id_number", "")
+                tgl    = item.get("tanggal_lahir") or item.get("dob", "")
+                alamat = item.get("alamat") or item.get("address", "")
+                jk     = item.get("jenis_kelamin") or item.get("gender", "")
+                nm     = item.get("nama") or item.get("name", "")
                 if not nik:
                     continue
                 if kota and kota.lower() not in alamat.lower():
                     continue
-                kandidat.append({
-                    "nik": nik, "nama": nama_db, "tgl": tgl,
-                    "alamat": alamat, "jk": jk
-                })
+                kandidat.append({"nik": nik, "nama": nm, "tgl": tgl, "alamat": alamat, "jk": jk})
     except Exception as e:
         print(f"{C['y']}[!] BreachDirectory: {e}{C['x']}")
 
     # LeakCheck fallback
-    if not kandidat and LEAKCHECK_KEY != "MASUKKAN_API_KEY_LEAKCHECK":
+    if not kandidat:
         try:
             r = requests.get(
                 f"https://leakcheck.io/api/public?key={LEAKCHECK_KEY}&check={nama}&type=name",
-                timeout=12
+                timeout=15
             )
             if r.status_code == 200:
                 for item in r.json().get("result", []):
-                    nik = item.get("nik","")
+                    nik = item.get("nik", "")
                     if not nik:
                         continue
                     kandidat.append({
                         "nik": nik,
-                        "nama": item.get("name",""),
-                        "tgl": item.get("dob",""),
-                        "alamat": item.get("address",""),
-                        "jk": item.get("gender","")
+                        "nama": item.get("name", ""),
+                        "tgl": item.get("dob", ""),
+                        "alamat": item.get("address", ""),
+                        "jk": item.get("gender", "")
                     })
         except Exception:
             pass
 
-    # output
     garis = "=" * 44
     print(f"\n{C['c']}{garis}{C['x']}")
     if not kandidat:
-        print(f"{C['r']}Tidak ada NIK ditemukan untuk nama '{nama}'.{C['x']}")
+        print(f"{C['r']}Tidak ada NIK ditemukan untuk '{nama}'.{C['x']}")
         print(f"{C['d']}(Data mungkin tidak ter-index di breach database){C['x']}")
         print(f"{C['c']}{garis}{C['x']}")
         return []
@@ -1191,7 +1679,6 @@ def nik_search():
         print(f"     JK     : {k['jk']}")
     print(f"\n{C['c']}{garis}{C['x']}")
 
-    # tawaran chain ke BPJS
     try:
         chain = input(f"{C['y']}Chain ke BPJS Search? (nomor / skip) >> {C['x']}").strip()
         if chain.isdigit():
@@ -1201,73 +1688,82 @@ def nik_search():
                 bpjs_search(k["nik"], k["tgl"])
     except (EOFError, KeyboardInterrupt):
         pass
-
     return kandidat
 
 # ─────────────────────────────────────────────
 # BPJS SEARCH
 # ─────────────────────────────────────────────
 
+def fmt_tgl(tgl):
+    """Auto convert berbagai format tanggal ke YYYY-MM-DD."""
+    tgl = tgl.strip()
+    for fmt in ["%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d", "%d %m %Y", "%Y%m%d"]:
+        try:
+            from datetime import datetime
+            return datetime.strptime(tgl, fmt).strftime("%Y-%m-%d")
+        except Exception:
+            pass
+    return tgl  # sudah YYYY-MM-DD atau format lain
+
 def bpjs_search(nik=None, tgl_lahir=None):
     print(f"\n{C['c']}{C['B']}BPJS SEARCH{C['x']}")
     try:
         if not nik:
-            nik      = input(f"{C['g']}[?] NIK          >> {C['x']}").strip()
+            nik = input(f"{C['g']}[?] NIK               >> {C['x']}").strip()
         if not tgl_lahir:
-            tgl_lahir = input(f"{C['g']}[?] Tgl lahir (YYYY-MM-DD) >> {C['x']}").strip()
+            tgl_lahir = input(f"{C['g']}[?] Tanggal lahir     >> {C['x']}").strip()
     except (EOFError, KeyboardInterrupt):
         return
-
     if not nik or not tgl_lahir:
-        print(f"{C['r']}NIK dan tanggal lahir wajib diisi.{C['x']}")
+        print(f"{C['r']}NIK dan tanggal lahir wajib.{C['x']}")
         return
 
-    print(f"\n{C['y']}[*] Query BPJS via CHIKA untuk NIK: {nik}{C['x']}")
+    tgl_fmt = fmt_tgl(tgl_lahir)
+    print(f"\n{C['y']}[*] BPJS Search — NIK: {nik}{C['x']}")
 
-    # Simulasi CHIKA WhatsApp via request ke endpoint publik
+    # Generate link PASTI yang sudah ter-isi
+    link_pasti = f"https://pasti.bpjs-kesehatan.go.id/cek/?nik={nik}&tgl={tgl_fmt}"
+
     hasil_bpjs = {}
+    # Coba hit endpoint PASTI
     try:
-        # endpoint publik PASTI BPJS
         r = requests.post(
             "https://pasti.bpjs-kesehatan.go.id/cek/",
-            data={"nik": nik, "tanggal_lahir": tgl_lahir},
-            headers={**session_headers(), "Content-Type": "application/x-www-form-urlencoded"},
+            data={"nik": nik, "tanggal_lahir": tgl_fmt},
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36",
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Referer": "https://pasti.bpjs-kesehatan.go.id/cek/",
+                "Origin": "https://pasti.bpjs-kesehatan.go.id",
+            },
             timeout=15
         )
         if r and r.status_code == 200:
             body = r.text
-            # parse nama
-            nama_match = re.search(r'Nama[^:]*:\s*([^\n<]+)', body)
-            status_match = re.search(r'Status[^:]*:\s*([^\n<]+)', body)
-            kelas_match = re.search(r'Kelas[^:]*:\s*([^\n<]+)', body)
-            fktp_match = re.search(r'FKTP[^:]*:\s*([^\n<]+)', body)
-            no_bpjs_match = re.search(r'No[^:]*BPJS[^:]*:\s*([^\n<]+)', body)
-
-            if nama_match:
-                hasil_bpjs["nama"]     = nama_match.group(1).strip()
-            if status_match:
-                hasil_bpjs["status"]   = status_match.group(1).strip()
-            if kelas_match:
-                hasil_bpjs["kelas"]    = kelas_match.group(1).strip()
-            if fktp_match:
-                hasil_bpjs["fktp"]     = fktp_match.group(1).strip()
-            if no_bpjs_match:
-                hasil_bpjs["no_bpjs"]  = no_bpjs_match.group(1).strip()
-    except Exception as e:
-        print(f"{C['y']}[!] PASTI endpoint: {e}{C['x']}")
+            for label, pattern in [
+                ("nama",    r'(?:Nama|name)[^:]*:\s*([^\n<,]+)'),
+                ("status",  r'(?:Status|status)[^:]*:\s*([^\n<,]+)'),
+                ("kelas",   r'(?:Kelas|kelas)[^:]*:\s*([^\n<,]+)'),
+                ("fktp",    r'(?:FKTP|faskes)[^:]*:\s*([^\n<,]+)'),
+                ("no_bpjs", r'(?:No[^:]*BPJS|nomor)[^:]*:\s*([^\n<,]+)'),
+            ]:
+                m = re.search(pattern, body, re.IGNORECASE)
+                if m:
+                    hasil_bpjs[label] = m.group(1).strip()
+    except Exception:
+        pass
 
     garis = "=" * 44
     print(f"\n{C['c']}{garis}{C['x']}")
     print(f"{C['g']}{C['B']}HASIL BPJS SEARCH{C['x']}")
     print(f"{C['c']}{garis}{C['x']}")
-
     if hasil_bpjs:
         for k, v in hasil_bpjs.items():
             print(f"  {k:<10}: {C['w']}{v}{C['x']}")
     else:
-        print(f"{C['r']}Data tidak ditemukan atau endpoint terblokir captcha.{C['x']}")
-        print(f"{C['d']}Coba manual: https://pasti.bpjs-kesehatan.go.id/cek/{C['x']}")
-
+        print(f"{C['y']}Endpoint terblokir captcha — buka link berikut:{C['x']}")
+        print(f"  {C['c']}{link_pasti}{C['x']}")
+        print(f"{C['d']}NIK dan tanggal lahir sudah ada di URL — tinggal klik cek{C['x']}")
     print(f"{C['c']}{garis}{C['x']}")
 
 # ─────────────────────────────────────────────
@@ -1317,25 +1813,23 @@ def full_osint():
         print(f"\n{C['y']}{C['B']}[7b/7] PHONE LOOKUP{C['x']}")
         laporan["phone"], _ = phone_lookup(nomor)
 
-    # laporan final
     garis = "=" * 44
     print(f"\n{C['c']}{C['B']}{garis}{C['x']}")
     print(f"{C['g']}{C['B']}LAPORAN OSINT LENGKAP{C['x']}")
     print(f"{C['c']}{garis}{C['x']}")
     if username:
         print(f"{C['y']}Target     :{C['x']} {username}")
-        print(f"{C['y']}Platform   :{C['x']} {len(laporan.get('found_sites',[]))} ditemukan")
+        print(f"{C['y']}Platform   :{C['x']} {len(laporan.get('found_sites', []))} ditemukan")
     if email:
         print(f"{C['y']}Email      :{C['x']} {email}")
-        print(f"{C['y']}Breach     :{C['x']} {len(laporan.get('breach',[]))} breach")
+        print(f"{C['y']}Breach     :{C['x']} {len(laporan.get('breach', []))} breach")
     if nomor:
         print(f"{C['y']}Nomor HP   :{C['x']} {fmt_nomor(nomor)}")
 
-    # simpan
     try:
         nama_file = f"osint_{username or email or nomor}.txt"
         with open(nama_file, "w", encoding="utf-8") as fh:
-            fh.write(f"LAPORAN OSINT — BY. MR414N-ID\n")
+            fh.write("LAPORAN OSINT — BY. MR414N-ID\n")
             fh.write(f"Target: {username or email or nomor}\n\n")
             if laporan.get("found_sites"):
                 fh.write("=== PLATFORM ===\n")
@@ -1363,409 +1857,23 @@ def full_osint():
     print(f"{C['c']}{garis}{C['x']}")
 
 # ─────────────────────────────────────────────
-# CORE — fitur lama tidak diubah
-# ─────────────────────────────────────────────
-
-def parse_sites():
-    sites = {}
-    for line in SITES_TEXT.strip().splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            nama, url = line.split(maxsplit=1)
-            sites[nama] = url.strip()
-        except ValueError:
-            pass
-    return sites
-
-def build_link(pola, username):
-    if pola.startswith("https://{u}."):
-        username = username.replace("_","-")
-    return pola.format(u=username)
-
-def ada_akun(nama, pola, username):
-    link = build_link(pola, username)
-    r = safe_get(link, timeout=10)
-    if not r:
-        return False, link
-    if r.status_code != 200:
-        return False, link
-    if r.url.rstrip("/").count("/") <= 2 and not link.rstrip("/").endswith(r.url.rstrip("/").split("/")[-1]):
-        return False, link
-    body = r.text[:60000].lower()
-    for teks in NOT_FOUND.get(nama,[]) + GENERIC_NOT_FOUND:
-        if teks.lower() in body:
-            return False, link
-    return True, link
-
-def cek_situs(nama, pola, username):
-    ada, link = ada_akun(nama, pola, username)
-    if not ada:
-        return nama, link, False
-    acak = "zq" + "".join(random.choices(string.ascii_lowercase + string.digits, k=14))
-    ada_acak, _ = ada_akun(nama, pola, acak)
-    return nama, link, not ada_acak
-
-C = {
-    "r":"\033[91m","g":"\033[92m","y":"\033[93m","b":"\033[94m",
-    "m":"\033[95m","c":"\033[96m","w":"\033[97m","d":"\033[90m",
-    "x":"\033[0m", "B":"\033[1m",
-}
-
-FONT = {
-    "M":["#   #","## ##","# # #","#   #","#   #"],
-    "R":["#### ","#   #","#### ","#  # ","#   #"],
-    "4":["#  # ","#  # ","#####","   # ","   # "],
-    "1":["  #  "," ##  ","  #  ","  #  "," ### "],
-    "N":["#   #","##  #","# # #","#  ##","#   #"],
-    "-":["     ","     "," ### ","     ","     "],
-    "I":["###"," # "," # "," # ","###"],
-    "D":["#### ","#   #","#   #","#   #","#### "],
-}
-
-TUX = [
-    "      .--.      ",
-    "     |o_o |     ",
-    "     |:_/ |     ",
-    "    //   \\ \\    ",
-    "   (|     | )   ",
-    "  /'\\_   _/`\\   ",
-    "  \\___)=(___/   ",
-]
-
-def blok(teks):
-    baris = [""] * 5
-    for ch in teks:
-        if ch in FONT:
-            for i in range(5):
-                baris[i] += FONT[ch][i].replace("#","█") + " "
-    return baris
-
-def banner():
-    os.system("clear")
-    cols = shutil.get_terminal_size((50,20)).columns
-    print()
-    for line in TUX:
-        print(C["y"] + C["B"] + line.center(cols) + C["x"])
-        time.sleep(0.05)
-    print()
-    teks = ["MR414N-ID"]
-    if sum(len(FONT.get(c,["     "])[0])+1 for c in teks[0] if c in FONT) > cols:
-        teks = ["MR414N","-ID"]
-    warna = ["r","y","g","c","m"]
-    for t in teks:
-        for i, row in enumerate(blok(t)):
-            print(C[warna[i%len(warna)]] + C["B"] + row.center(cols) + C["x"])
-            time.sleep(0.05)
-    print()
-    print(C["c"] + C["B"] + "BY. MR414N-ID".center(cols) + C["x"])
-    print(C["d"] + f"OSINT Tools  •  {len(parse_sites())} situs".center(cols) + C["x"])
-    print(C["d"] + ("─" * min(cols,44)).center(cols) + C["x"])
-    print()
-
-SHOW_GAGAL = False
-
-def cari(username, simpan=True, koleksi=None):
-    sites = parse_sites()
-    total = len(sites)
-    sukses = []
-    selesai = 0
-    cols = shutil.get_terminal_size((50,20)).columns
-    print(C["y"] + f"[*] Mencari '{username}' di {total} situs...\n" + C["x"])
-
-    def progres():
-        print(f"\r{C['d']}[{selesai}/{total}] sedang dicek...{C['x']}", end="", flush=True)
-
-    with ThreadPoolExecutor(max_workers=40) as ex:
-        futures = {ex.submit(cek_situs, n, p, username): n for n, p in sites.items()}
-        try:
-            for f in as_completed(futures):
-                selesai += 1
-                try:
-                    nama, link, ada = f.result()
-                except Exception:
-                    nama, link, ada = futures[f], "", False
-                if ada:
-                    print(f"\r\033[K{C['g']}[sukses]{C['x']} {nama}: {link}", flush=True)
-                    sukses.append((nama, link))
-                elif SHOW_GAGAL:
-                    print(f"\r\033[K{C['r']}[gagal]{C['x']} {nama}", flush=True)
-                progres()
-        except KeyboardInterrupt:
-            for fu in futures:
-                fu.cancel()
-            raise
-
-    sukses.sort(key=lambda x: x[0])
-    garis = "=" * min(cols,44)
-    print("\r\033[K", end="")
-    print(f"\n{C['c']}{garis}{C['x']}")
-    print(f"{C['g']}{C['B']}Searching selesai sukses [ {len(sukses)} situs ]{C['x']}")
-    print(f"{C['d']}(dari {total} situs yang dicek){C['x']}")
-    print(f"{C['c']}{garis}{C['x']}")
-    if sukses:
-        for nama, link in sukses:
-            print(f"{C['y']}{nama}{C['x']} : {link}")
-        print(f"{C['c']}{garis}{C['x']}")
-        if simpan:
-            with open(f"hasil_{username}.txt","w",encoding="utf-8") as fh:
-                fh.write(f"Searching selesai sukses [ {len(sukses)} situs ]\n")
-                fh.write("\n".join(f"{n} : {l}" for n, l in sukses) + "\n")
-            print(f"{C['g']}Tersimpan di hasil_{username}.txt{C['x']}")
-    else:
-        print(f"{C['r']}Tidak ada akun ditemukan.{C['x']}")
-    if koleksi is not None:
-        koleksi[username] = list(sukses)
-    return len(sukses)
-
-def normalize_name(nama):
-    nama = nama.lower().strip()
-    for ch in [",",".","-","_"]:
-        nama = nama.replace(ch," ")
-    return [p for p in nama.split() if p and len(p) > 1]
-
-def generate_candidates(nama, max_candidates=40):
-    parts = normalize_name(nama)
-    if not parts:
-        return []
-    candidates = set()
-    if len(parts) == 1:
-        base = parts[0]
-        candidates.update([base, f"{base}1", f"{base}01", f"{base}88",
-                           f"{base}99", f"{base}.id", f"{base}_id",
-                           f"_{base}", f"{base}_", f"the{base}", f"real{base}"])
-    else:
-        first, last = parts[0], parts[-1]
-        joined = "".join(parts)
-        candidates.update([joined, f"{first}{last}", f"{last}{first}",
-                           f"{first}.{last}", f"{first}_{last}", f"{first}-{last}",
-                           f"{first[:3]}{last}", f"{first}{last[:3]}",
-                           f"{first[0]}{last}"])
-        if len(parts) > 2:
-            mid = "".join(parts[1:-1])
-            candidates.add(f"{first}{mid}{last}")
-        for n in ["01","88","99","123","1"]:
-            candidates.update([f"{joined}{n}", f"{first}{last}{n}"])
-        for p in ["the","real","mr"]:
-            candidates.add(f"{p}{joined}")
-        candidates.update([f"{joined}.id", f"{joined}_id", f"{joined}official"])
-    return list(candidates)[:max_candidates]
-
-def region_in_username(username, region):
-    if not region:
-        return False
-    region_lower = region.lower().strip()
-    aliases = REGION_ALIASES.get(region_lower, [region_lower])
-    return any(a in username.lower() for a in aliases)
-
-def check_candidate_on_sites(candidate, sites_subset, max_workers=15):
-    found = []
-    def _check(item):
-        name, pattern = item
-        ada, link = ada_akun(name, pattern, candidate)
-        return name, link, ada
-    with ThreadPoolExecutor(max_workers=max_workers) as ex:
-        futures = {ex.submit(_check, item): item for item in sites_subset.items()}
-        for f in as_completed(futures):
-            try:
-                name, link, ada = f.result()
-                if ada:
-                    found.append((name, link))
-            except Exception:
-                pass
-    return found
-
-def tanya_yn(pesan):
-    while True:
-        j = input(f"{C['y']}{pesan} (y/n) {C['w']}>> {C['x']}").strip().lower()
-        if j in ("y","ya"): return True
-        if j in ("n","t","tidak"): return False
-        print(f"{C['r']}Ketik y atau n.{C['x']}")
-
-def baca_file_username(path):
-    path = os.path.expanduser(path.strip().strip("\"'"))
-    if not os.path.isfile(path) and os.path.isfile(path+".txt"):
-        path += ".txt"
-    if not os.path.isfile(path):
-        return None
-    daftar, dilewati, lihat = [], 0, set()
-    with open(path, encoding="utf-8", errors="ignore") as fh:
-        for baris in fh:
-            u = baris.strip().lstrip("@")
-            if not u: continue
-            if " " in u or "\t" in u or u.lower() in lihat:
-                dilewati += 1
-                continue
-            lihat.add(u.lower())
-            daftar.append(u)
-    return daftar, dilewati
-
-def input_manual():
-    daftar = []
-    while True:
-        u = input(f"\n{C['g']}[?] Masukkan username >> {C['x']}").strip().lstrip("@")
-        if not u or " " in u:
-            print(f"{C['r']}Username tidak valid.{C['x']}")
-        elif u.lower() in [x.lower() for x in daftar]:
-            print(f"{C['y']}'{u}' sudah ada.{C['x']}")
-        else:
-            daftar.append(u)
-            print(f"{C['g']}[+] Ditambahkan: {u} (total {len(daftar)}){C['x']}")
-        while True:
-            lanjut = input(f"{C['y']}[1]{C['x']} Tambah  {C['y']}[2]{C['x']} Selesai >> ").strip()
-            if lanjut in ("1","2"): break
-            print(f"{C['r']}Ketik 1 atau 2.{C['x']}")
-        if lanjut == "2":
-            return daftar
-
-def cari_dari_nama(nama, region):
-    sites = parse_sites()
-    candidates = generate_candidates(nama)
-    if not candidates:
-        print(f"{C['r']}Nama tidak valid.{C['x']}")
-        return
-    priority_patterns = {n: sites[n] for n in PRIORITY_SITES if n in sites}
-    indo_patterns = {n: sites[n] for n in INDONESIAN_SITES if n in sites} if region else {}
-    found = {}
-    for i, cand in enumerate(candidates, 1):
-        print(f"\r{C['d']}[{i}/{len(candidates)}] cek: {cand}...{C['x']}   ", end="", flush=True)
-        social = check_candidate_on_sites(cand, priority_patterns)
-        if social:
-            found[cand] = {"sites": social, "region_match": region_in_username(cand, region), "indonesian": False}
-            print(f"\r\033[K{C['g']}[+] {cand} → {', '.join(s[0] for s in social)}{C['x']}")
-    print("\r\033[K", end="")
-    if not found:
-        print(f"{C['r']}Tidak ada kandidat ditemukan.{C['x']}")
-        return
-    if region and indo_patterns:
-        for cand in list(found.keys()):
-            indo = check_candidate_on_sites(cand, indo_patterns, max_workers=8)
-            if indo:
-                found[cand]["sites"].extend(indo)
-                found[cand]["indonesian"] = True
-    def skor(item):
-        _, info = item
-        s = len(info["sites"])
-        if info["region_match"]: s += 10
-        if info["indonesian"]: s += 5
-        return -s
-    sorted_found = sorted(found.items(), key=skor)
-    cols = shutil.get_terminal_size((50,20)).columns
-    garis = "=" * min(cols,44)
-    print(f"\n{C['c']}{garis}{C['x']}")
-    print(f"{C['g']}{C['B']}KANDIDAT [{len(sorted_found)} username]{C['x']}")
-    print(f"{C['c']}{garis}{C['x']}")
-    for i, (cand, info) in enumerate(sorted_found, 1):
-        tags = []
-        if info["region_match"]: tags.append(f"{C['g']}[daerah✓]{C['x']}")
-        if info["indonesian"]: tags.append(f"{C['c']}[indo✓]{C['x']}")
-        sites_str = ", ".join(s[0] for s in info["sites"][:4])
-        print(f"{C['y']}{i:2}.{C['x']} {C['w']}{cand:<22}{C['x']} {C['d']}({sites_str}){C['x']} {' '.join(tags)}")
-    print(f"{C['c']}{garis}{C['x']}")
-    try:
-        choice = input(f"\n{C['y']}Pilih nomor cek 500 situs (1,2,3 / all / skip) >> {C['x']}").strip().lower()
-    except (EOFError, KeyboardInterrupt):
-        return
-    if not choice or choice == "skip":
-        return
-    if choice == "all":
-        selected = [c for c, _ in sorted_found]
-    else:
-        try:
-            idxs = [int(x.strip())-1 for x in choice.split(",")]
-            selected = [sorted_found[i][0] for i in idxs if 0 <= i < len(sorted_found)]
-        except Exception:
-            selected = []
-    for u in selected:
-        cari(u)
-
-def cari_gabungan(nama, region):
-    sites = parse_sites()
-    candidates = generate_candidates(nama)
-    if not candidates:
-        print(f"{C['r']}Nama tidak valid.{C['x']}")
-        return
-    priority_patterns = {n: sites[n] for n in PRIORITY_SITES if n in sites}
-    found = {}
-    for i, cand in enumerate(candidates, 1):
-        print(f"\r{C['d']}[{i}/{len(candidates)}] cek: {cand}...{C['x']}   ", end="", flush=True)
-        social = check_candidate_on_sites(cand, priority_patterns)
-        if social:
-            found[cand] = social
-            print(f"\r\033[K{C['g']}[+] {cand} → {', '.join(s[0] for s in social)}{C['x']}")
-    print("\r\033[K")
-    if not found:
-        print(f"{C['r']}Tidak ada kandidat ditemukan.{C['x']}")
-        return
-    for u in found:
-        cari(u)
-
-def cari_massal():
-    print(f"\n{C['c']}{C['B']}CARI USERNAME MASSAL{C['x']}")
-    print(f"{C['y']}[1]{C['x']} Dari file txt")
-    print(f"{C['y']}[2]{C['x']} Input manual")
-    print(f"{C['y']}[b]{C['x']} Kembali")
-    try:
-        pilih = input(f"\n{C['g']}[?] Pilih >> {C['x']}").strip().lower()
-        if pilih == "1":
-            fn = input(f"{C['g']}[?] Nama file txt >> {C['x']}").strip()
-            if not fn: return
-            data = baca_file_username(fn)
-            if data is None:
-                print(f"{C['r']}File tidak ditemukan.{C['x']}")
-                return
-            daftar, _ = data
-        elif pilih == "2":
-            daftar = input_manual()
-        else:
-            return
-        if not daftar:
-            return
-        hasil = {}
-        try:
-            for i, u in enumerate(daftar, 1):
-                print(f"\n{C['y']}{C['B']}[{i}/{len(daftar)}] USERNAME: {u}{C['x']}")
-                cari(u, simpan=False, koleksi=hasil)
-        except (KeyboardInterrupt, EOFError):
-            print(f"\n{C['r']}Dibatalkan.{C['x']}")
-        if not hasil: return
-        urut = sorted(hasil.items(), key=lambda kv: -len(kv[1]))
-        total_jejak = sum(len(v) for v in hasil.values())
-        print(f"\n{C['g']}{C['B']}RINGKASAN MASSAL{C['x']}")
-        for u, v in urut:
-            warna = C["g"] if v else C["r"]
-            print(f"{C['y']}{u:<22}{C['x']} : {warna}{C['B']}{len(v)} situs{C['x']}")
-        print(f"{C['d']}Total: {len(hasil)} username, {total_jejak} jejak{C['x']}")
-        if tanya_yn("Simpan hasil?"):
-            with open("hasil_massal.txt","w",encoding="utf-8") as fh:
-                fh.write("Pencarian massal - BY. MR414N-ID\n")
-                for u, v in urut:
-                    fh.write(f"\n=== {u} ({len(v)} situs) ===\n")
-                    for ns, lk in sorted(v):
-                        fh.write(f"{ns} : {lk}\n")
-            print(f"{C['g']}Tersimpan di hasil_massal.txt{C['x']}")
-    except (EOFError, KeyboardInterrupt):
-        print()
-
-# ─────────────────────────────────────────────
 # MENU
 # ─────────────────────────────────────────────
 
 def tampilkan_menu():
-    print(f"{C['y']}[1]{C['x']}  Username Finder       {C['d']}(500+ situs){C['x']}")
+    print(f"{C['y']}[1]{C['x']}  Username Finder       {C['d']}(500 situs){C['x']}")
     print(f"{C['y']}[2]{C['x']}  Name → Username       {C['d']}(+ filter daerah){C['x']}")
     print(f"{C['y']}[3]{C['x']}  Gabungan full auto    {C['d']}(nama → 500 situs){C['x']}")
     print(f"{C['y']}[4]{C['x']}  Cari Massal           {C['d']}(file / manual){C['x']}")
     print(f"{C['y']}[5]{C['x']}  Breach Check          {C['d']}(HIBP + BD + LC){C['x']}")
-    print(f"{C['y']}[6]{C['x']}  Phone Lookup          {C['d']}(40+ platform){C['x']}")
+    print(f"{C['y']}[6]{C['x']}  Phone Lookup          {C['d']}(WA, TG, fintech + nama){C['x']}")
     print(f"{C['y']}[7]{C['x']}  Profile Scraper       {C['d']}(dari username){C['x']}")
-    print(f"{C['y']}[8]{C['x']}  Avatar pHash          {C['d']}(korelasi foto){C['x']}")
+    print(f"{C['y']}[8]{C['x']}  Avatar pHash          {C['d']}(korelasi foto profil){C['x']}")
     print(f"{C['y']}[9]{C['x']}  Google Dorking        {C['d']}(auto query){C['x']}")
     print(f"{C['y']}[10]{C['x']} Wayback Check         {C['d']}(lacak akun lama){C['x']}")
     print(f"{C['y']}[11]{C['x']} Social Graph          {C['d']}(peta koneksi){C['x']}")
     print(f"{C['y']}[12]{C['x']} NIK Search            {C['d']}(nama → NIK){C['x']}")
-    print(f"{C['y']}[13]{C['x']} BPJS Search           {C['d']}(NIK → status BPJS){C['x']}")
+    print(f"{C['y']}[13]{C['x']} BPJS Search           {C['d']}(NIK + TTL → status){C['x']}")
     print(f"{C['y']}[14]{C['x']} Full OSINT            {C['d']}(gabungan semua){C['x']}")
     print(f"{C['y']}[q]{C['x']}  Keluar")
 
@@ -1793,7 +1901,7 @@ def main():
             print()
             break
 
-        if pilih in ("q","quit","exit"):
+        if pilih in ("q", "quit", "exit"):
             break
         elif pilih == "1":
             try:
